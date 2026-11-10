@@ -1,0 +1,12 @@
+# OS-generated files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local mise overrides (committed .mise.toml is the source of truth)
+.mise.local.toml
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
