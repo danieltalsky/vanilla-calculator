@@ -1,5 +1,5 @@
 [tools]
-php = "8.5"
+node = "22"
 
 [tasks.test]
-run = "php -l index.php && php tests/smoke.php && php tests/unit.php"
+run = "node tests/lint.mjs && node tests/smoke.mjs && node tests/unit.mjs"

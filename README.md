@@ -13,41 +13,33 @@ Used by hundreds of thousands of people and still in heavy use.
 ## Current state
 
 This codebase has only recently been version controlled for the first time.
-It is intentionally minimal: a **single HTML page with inline PHP**
-(`index.php`). There is no framework, no package manager, no build step, and no
-runtime dependencies beyond PHP itself.
+It is intentionally minimal: a **single static HTML page with inline
+JavaScript** (`index.html`). There is no framework, no package manager, no build
+step, and no runtime dependencies — the app runs entirely in the browser.
 
 ## Requirements
 
-- [mise](https://mise.jdx.dev) — for managing the PHP runtime
+- [mise](https://mise.jdx.dev) — for managing the Node runtime (used to run the
+  tests; the app itself only needs a browser)
 
 ## Setup
 
 1. Install mise (see the link above) if you don't already have it.
-2. Install the pinned PHP version from `.mise.toml`:
+2. Install the pinned Node version from `.mise.toml`:
 
    ```sh
    mise install
    ```
 
 3. Make sure mise is activated in your shell (`mise activate` / `mise use`),
-   so `php` resolves to the project's PHP.
+   so `node` resolves to the project's Node.
 
 ## Running locally
 
-From the project root:
-
-```sh
-mise x -- php -S localhost:8000
-```
-
-Then open <http://localhost:8000> in your browser.
-
-If `php` is already on your PATH via mise, you can also just run:
-
-```sh
-php -S localhost:8000
-```
+The app is a single static file — just open `index.html` in a browser. Query
+strings work from `file://` too, so shareable links behave the same as in
+production. If you want a local HTTP server, any static server works (for
+example `python -m http.server 8000`).
 
 ## Testing
 
@@ -60,15 +52,18 @@ mise run test
 Or run the scripts individually:
 
 ```sh
-mise x -- php tests/smoke.php   # integration: asserts key rendered outputs
-mise x -- php tests/unit.php    # unit: exercises the calculation functions
+mise x -- node tests/lint.mjs    # syntax-checks the inline scripts
+mise x -- node tests/smoke.mjs   # integration: asserts the rendered strings
+mise x -- node tests/unit.mjs    # unit: exercises the calculation functions
 ```
 
 All exit non-zero on failure.
 
 ## How it works
 
-The calculator has three modes, selected via the query string:
+The calculator runs entirely in the browser: `index.html` reads the query
+string, computes the results in JavaScript, and updates the page live (no page
+reload). The three modes are selected via the query string:
 
 - `?byContainerSize` (default) — enter a container capacity; get the alcohol
   and vanilla amounts to fill it.
@@ -92,6 +87,32 @@ The three formulas are grams of vanilla beans per 10 ml of alcohol:
 - **Budget** (`BUDGET`) — 1.05 g per 10 ml. 5% more than FDA, to account for
   heavier Grade A beans.
 
+## Using the calculator
+
+The calculator answers three questions. Pick the tab that matches what you
+already know:
+
+- **by Container Size** (default) — you know the bottle size. Enter its capacity
+  and unit; it tells you how much vanilla and alcohol to add to fill it.
+- **by Vanilla Amount** — you have a fixed amount of vanilla. Enter its weight
+  (grams or ounces); it tells you how much alcohol you can turn into extract.
+- **by Alcohol Amount** — you have a fixed amount of alcohol. Enter it; it tells
+  you how much vanilla to use.
+
+The **Strength & formula** settings tune the recipe:
+
+- **Strength** — from Single Fold (regular strength) up to Triple Fold.
+- **Formula** — which guideline to follow (FDA, Co-Op, or Budget).
+
+Click **What are strength and formula?** for a plain-English explanation of what
+the folds and formulas mean.
+
+## Design explorations
+
+`design-explorations.html` is the scratch mockup used to explore visual
+directions before the rewrite. It is superseded by `index.html` and is not the
+live calculator — kept only for reference.
+
 ## Author
 
 Built by Daniel Talsky (danieltalsky@gmail.com). Provided as-is with no
@@ -99,6 +120,8 @@ warranty of any kind.
 
 ## Project conventions
 
-- Keep the application a single `index.php` file with inline
-  HTML/CSS/JS/PHP.
+- Keep the application a single `index.html` file with inline HTML/CSS/JS.
 - No framework, no package manager, no build step.
+- Keep the calculation functions (`calculateByContainer`, `calculateByAlcohol`,
+  `calculateByVanilla`) pure and untouched unless the behavior is being changed
+  on purpose.
