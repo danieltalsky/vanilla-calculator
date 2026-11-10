@@ -24,6 +24,13 @@ is no framework, no package manager, and no build step.
 - Target the PHP version pinned in `.mise.toml` (currently 8.5).
 - No external dependencies.
 
+## Workflow
+
+- Use a pull-request-based workflow: create a feature branch, commit there, push,
+  and open a PR against `main` rather than committing directly to `main`.
+- Merge the PR once CI passes. CI runs `mise run test` via
+  `.github/workflows/test.yml`.
+
 ## Running and testing
 
 - Run: `mise x -- php -S localhost:8000`, then open http://localhost:8000.
