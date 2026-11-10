@@ -46,6 +46,15 @@ If `php` is already on your PATH via mise, you can also just run:
 php -S localhost:8000
 ```
 
+## Testing
+
+A dependency-free smoke test asserts the calculator's outputs for a handful
+of known inputs (including the case where no formula is specified):
+
+```sh
+mise x -- php tests/smoke.php
+```
+
 ## How it works
 
 The calculator has three modes, selected via the query string:
