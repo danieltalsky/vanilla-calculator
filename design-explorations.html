@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanilla Extract Calculator — Design Explorations</title>
+
+<!--
+  DESIGN EXPLORATIONS — not the live calculator.
+  This is a standalone, dependency-free mockup of two alternative visual
+  directions for index.php. The calculation logic is ported faithfully to
+  JavaScript so the mockups are interactive, but this file does NOT feed the
+  production app.
+-->
+
+<style>
+/* ============================================================
+   Exploration chrome (switcher) — not part of either design
+   ============================================================ */
+html { -webkit-text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #ececec;
+}
+
+.explorer {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: #1f1f24;
+  color: #e8e8ec;
+  font-size: 13px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+.explorer .exp-title { font-weight: 600; margin-right: 8px; letter-spacing: .02em; }
+.explorer .exp-note { color: #9a9aa2; }
+.explorer button {
+  appearance: none;
+  border: 1px solid #3a3a44;
+  background: #2b2b32;
+  color: #e8e8ec;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.explorer button.is-active { background: #fff; color: #111; border-color: #fff; font-weight: 600; }
+.explorer .spacer { flex: 1; }
+
+/* Shared demo helpers */
+.design { display: none; }
+.design.is-active { display: block; }
+.demo-label {
+  position: sticky;
+  top: 46px;
+  z-index: 40;
+  pointer-events: none;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 0 0 8px 0;
+  background: rgba(0,0,0,.66);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* Shared modal (help) — works for both designs */
+dialog#helpDialog {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 560px;
+  width: calc(100% - 32px);
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+}
+dialog#helpDialog::backdrop { background: rgba(20, 16, 10, .55); backdrop-filter: blur(2px); }
+.help-card { padding: 26px 28px 22px; }
+.help-card h2 { margin: 0 0 4px; font-size: 22px; }
+.help-card .close {
+  position: absolute; top: 14px; right: 14px;
+  appearance: none; border: none; background: #eee; color: #333;
+  width: 30px; height: 30px; border-radius: 50%; font-size: 16px; line-height: 1;
+  cursor: pointer;
+}
+.help-card h3 { margin: 18px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #8a6a35; }
+.help-card p { margin: 6px 0; font-size: 14px; line-height: 1.55; color: #333; }
+.help-card strong { color: #241a10; }
+
+/* ============================================================
+   DESIGN A — "Vanilla Bean" (warm, artisanal)
+   ============================================================ */
+.design-a {
+  --bg: #f6efe2;
+  --surface: #fffdf8;
+  --surface-2: #fbf5e9;
+  --text: #33241a;
+  --muted: #8a745f;
+  --accent: #b4761f;
+  --accent-strong: #8f5c12;
+  --accent-soft: #f3e3c3;
+  --border: #e8dcc4;
+  --shadow: 0 10px 30px rgba(120, 90, 40, .12);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 64px;
+}
+.design-a .serif { font-family: Georgia, "Times New Roman", serif; }
+.design-a .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+.design-a .site-head { padding: 40px 20px 8px; text-align: center; }
+.design-a .brand-mark { display: inline-flex; align-items: center; gap: 10px; }
+.design-a .brand-mark svg { color: var(--accent); }
+.design-a h1.title { font-size: clamp(30px, 6vw, 40px); margin: 12px 0 4px; font-weight: 600; letter-spacing: .01em; }
+.design-a .tagline { color: var(--muted); font-size: 15px; margin: 0; }
+
+/* Mode tabs */
+.design-a .mode-tabs {
+  display: flex; gap: 8px;
+  margin: 28px auto 18px;
+  max-width: 480px;
+  background: var(--surface-2);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+.design-a .mode-btn {
+  flex: 1;
+  appearance: none; border: none; background: transparent;
+  font-family: inherit; font-size: 15px; color: var(--muted);
+  padding: 10px 8px; border-radius: 10px; cursor: pointer; font-weight: 600;
+  transition: background .15s, color .15s;
+}
+.design-a .mode-btn.is-active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 2px 8px rgba(120,90,40,.15); }
+
+/* Cards */
+.design-a .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 26px 24px;
+  margin-bottom: 18px;
+}
+.design-a .panel { display: none; }
+.design-a .panel.is-active { display: block; }
+.design-a .prompt { font-family: Georgia, serif; font-size: clamp(20px, 4vw, 24px); margin: 0 0 16px; font-weight: 600; }
+.design-a .field-row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.design-a .amount-wrap { flex: 1 1 200px; }
+.design-a label.field-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+.design-a input.amount {
+  width: 100%; font-size: 30px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--surface-2);
+  color: var(--text); appearance: textfield;
+}
+.design-a input.amount:focus { outline: none; border-color: var(--accent); background: #fff; }
+.design-a select.unit {
+  font-size: 18px; padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); color: var(--text); cursor: pointer;
+}
+.design-a select.unit:focus { outline: none; border-color: var(--accent); }
+
+/* Advanced group */
+.design-a .advanced { border-top: 1px dashed var(--border); margin-top: 22px; padding-top: 18px; }
+.design-a .advanced-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.design-a .advanced-head h2 { font-size: 15px; margin: 0; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-strong); }
+.design-a .advanced-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.design-a .advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.design-a .advanced select {
+  width: 100%; font-size: 16px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); color: var(--text); cursor: pointer;
+}
+.design-a .advanced select:focus { outline: none; border-color: var(--accent); }
+.design-a .help-btn {
+  appearance: none; border: none; background: none; padding: 0;
+  color: var(--accent-strong); font-size: 13px; font-weight: 600; cursor: pointer;
+  text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+}
+
+/* Results */
+.design-a .result-summary { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+.design-a .result-head { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin: 0 0 12px; }
+.design-a .result-hero { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.design-a .stat { flex: 1 1 140px; }
+.design-a .stat .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(28px, 6vw, 36px); font-weight: 700; color: var(--accent-strong); }
+.design-a .stat .value small { font-size: 16px; color: var(--muted); font-weight: 500; }
+.design-a .stat .caption { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 2px; }
+.design-a .result-sub { margin: 14px 0 0; font-size: 14px; color: var(--text); }
+
+/* Bottle visual */
+.design-a .bottle { position: relative; width: 150px; height: 230px; flex: 0 0 150px; }
+.design-a .bottle .neck { width: 60px; height: 26px; margin: 0 auto; border: 4px solid var(--text); border-bottom: none; border-radius: 10px 10px 0 0; }
+.design-a .bottle .body {
+  height: 200px; border: 4px solid var(--text); border-top: 1px solid var(--text);
+  border-radius: 8px 8px 16px 16px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.design-a .bottle .fill { width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.design-a .bottle .fill--alcohol { background: #f0d9a6; }
+.design-a .bottle .fill--vanilla { background: #4a2b16; color: #fff; }
+.design-a .bottle .fill .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+.design-a .bottle .fill strong { font-size: 18px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* Alcohol / vanilla result callout */
+.design-a .callout { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 14px; padding: 18px 20px; }
+.design-a .callout .big { font-size: clamp(26px, 6vw, 34px); font-family: Georgia, serif; font-weight: 700; color: var(--accent-strong); }
+.design-a .callout .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+.design-a .unit-table { width: 100%; border-collapse: collapse; }
+.design-a .unit-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.design-a .unit-table td:first-child { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; font-weight: 600; color: var(--accent-strong); }
+.design-a .unit-table td:last-child { text-align: right; color: var(--muted); }
+
+.design-a .foot { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .design-a .advanced-grid { grid-template-columns: 1fr; }
+  .design-a .result-hero { justify-content: center; }
+  .design-a .card { padding: 22px 18px; }
+  .design-a .bottle { width: 130px; flex-basis: 130px; }
+}
+
+/* ============================================================
+   DESIGN B — "Clean utility" (minimal, mobile-first)
+   ============================================================ */
+.design-b {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #14161a;
+  --muted: #66707e;
+  --accent: #14653f;
+  --accent-strong: #0d4a2e;
+  --accent-soft: #e7f3ec;
+  --border: #e3e6ea;
+  --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 64px;
+}
+.design-b .wrap { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+
+.design-b .topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 4px 8px;
+}
+.design-b .topbar .app { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.design-b .topbar .app svg { color: var(--accent); }
+.design-b h1.title { font-size: clamp(26px, 6vw, 34px); margin: 20px 0 4px; letter-spacing: -.01em; }
+.design-b .tagline { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
+
+/* Tab bar */
+.design-b .mode-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.design-b .mode-btn {
+  flex: 1; appearance: none; border: none; background: none; font-family: inherit; font-size: 14px;
+  color: var(--muted); padding: 10px 6px 12px; cursor: pointer; font-weight: 600;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  line-height: 1.25; white-space: normal; text-align: center;
+}
+.design-b .mode-btn.is-active { color: var(--accent-strong); border-bottom-color: var(--accent-strong); }
+
+.design-b .panel { display: none; }
+.design-b .panel.is-active { display: block; }
+
+.design-b .card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 22px 20px; margin-bottom: 14px;
+}
+.design-b .prompt { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
+.design-b .field-row { display: flex; gap: 10px; align-items: flex-end; }
+.design-b label.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+.design-b .amount-wrap { flex: 1 1 auto; }
+.design-b input.amount {
+  width: 100%; font-size: 26px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); appearance: textfield;
+}
+.design-b input.amount:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.design-b select.unit {
+  font-size: 16px; padding: 13px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer;
+}
+.design-b select.unit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Advanced — always visible, not collapsed */
+.design-b .advanced { margin-bottom: 14px; }
+.design-b .advanced-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.design-b .advanced-title { font-size: 15px; font-weight: 700; margin: 0; }
+.design-b .advanced-hint { color: var(--muted); font-size: 13px; margin: 2px 0 14px; }
+.design-b .advanced-help {
+  appearance: none; border: none; background: none; padding: 0;
+  color: var(--accent-strong); font-size: 13px; font-weight: 600; cursor: pointer;
+  text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+}
+.design-b .advanced-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.design-b .advanced select {
+  width: 100%; font-size: 15px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer;
+}
+.design-b .advanced select:focus { outline: none; border-color: var(--accent); }
+
+/* Results — stat cards */
+.design-b .result-summary { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.design-b .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.design-b .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 16px; }
+.design-b .stat-card .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 28px; font-weight: 700; color: var(--accent-strong); }
+.design-b .stat-card .value small { font-size: 15px; color: var(--muted); font-weight: 500; }
+.design-b .stat-card .caption { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; }
+.design-b .result-sub { margin: 14px 0 0; font-size: 14px; color: var(--text); }
+
+/* Container vessel (vertical fill) */
+.design-b .vessel-wrap { display: flex; justify-content: center; margin: 6px 0 20px; }
+.design-b .vessel { width: 150px; text-align: center; }
+.design-b .vessel__body {
+  position: relative; height: 220px;
+  border: 2px solid #cfc0a4;
+  border-radius: 6px 6px 24px 24px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  background: #fdf8ec;
+}
+.design-b .vessel__fill {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+.design-b .vessel__alcohol {
+  background: linear-gradient(180deg, #ecd28a 0%, #d9a441 100%);
+  color: #5a3d12;
+}
+.design-b .vessel__vanilla {
+  background: linear-gradient(180deg, #7c4b2a 0%, #4a2b16 100%);
+  color: #fff;
+  box-shadow: inset 0 6px 0 rgba(255, 255, 255, .18);
+}
+.design-b .vessel__label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .85; font-weight: 600; }
+.design-b .vessel__fill strong { font-size: 15px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.design-b .vessel__gloss {
+  position: absolute; top: 0; bottom: 0; left: 10px; width: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.06));
+  border-radius: 8px; pointer-events: none;
+}
+
+.design-b .unit-list { list-style: none; margin: 0; padding: 0; }
+.design-b .unit-list li { display: flex; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--border); }
+.design-b .unit-list li:last-child { border-bottom: none; }
+.design-b .unit-list .amt { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 18px; font-weight: 600; color: var(--accent-strong); }
+.design-b .unit-list .u { color: var(--muted); }
+
+.design-b .foot { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin-top: 20px; padding: 0 4px; }
+
+@media (max-width: 460px) {
+  .design-b .advanced-body { grid-template-columns: 1fr; }
+  .design-b .mode-btn { font-size: 12.5px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Exploration switcher -->
+<div class="explorer">
+  <span class="exp-title">Design explorations</span>
+  <span class="exp-note">(mockups only — not the live calculator)</span>
+  <span class="spacer"></span>
+  <button type="button" data-target="design-a" class="is-active">A · Warm artisanal</button>
+  <button type="button" data-target="design-b">B · Clean minimal</button>
+</div>
+
+<!-- ===================== DESIGN A ===================== -->
+<section class="design design-a is-active" id="design-a">
+  <span class="demo-label">Direction A — Warm artisanal</span>
+
+  <header class="site-head">
+    <span class="brand-mark">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3c3 2 6 4 7 8 0 4-3 7-7 7s-7-3-7-7c1-4 4-6 7-8z"/>
+        <path d="M12 3c-1 2-1.5 3-1.5 5 0 2 1 4 1.5 5.5" opacity=".55"/>
+      </svg>
+      Vanilla Extract Calculator
+    </span>
+    <h1 class="title serif">Measure beans &amp; alcohol for homemade extract</h1>
+    <p class="tagline">Three ways to calculate — pick the one that matches what you know.</p>
+  </header>
+
+  <div class="wrap">
+    <nav class="mode-tabs" role="tablist" aria-label="Calculation mode">
+      <button type="button" class="mode-btn is-active" data-mode="container">Container</button>
+      <button type="button" class="mode-btn" data-mode="alcohol">Alcohol</button>
+      <button type="button" class="mode-btn" data-mode="vanilla">Vanilla</button>
+    </nav>
+
+    <section class="card panel" data-panel="container">
+      <h2 class="prompt">How big is your container?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="a-container-amount">Capacity</label>
+          <input class="amount" data-role="amount" id="a-container-amount" type="number" inputmode="decimal" min="0" step="any" value="750">
+        </div>
+        <div>
+          <label class="field-label" for="a-container-unit">Unit</label>
+          <select class="unit" data-role="unit" id="a-container-unit">
+            <option value="ml" selected>ml</option>
+            <option value="oz">fluid oz</option>
+            <option value="cups">cups</option>
+            <option value="pints">pints</option>
+            <option value="quarts">quarts</option>
+            <option value="liters">liters</option>
+            <option value="gallons">gallons</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="advanced">
+        <div class="advanced-head">
+          <h2>Recipe settings</h2>
+          <button type="button" class="help-btn" data-open-help>What do “fold” &amp; “formula” mean?</button>
+        </div>
+        <p class="advanced-hint">These two settings tune the recipe below.</p>
+        <div class="advanced-grid">
+          <div>
+            <label class="field-label" for="a-strength">Strength</label>
+            <select data-role="strength" id="a-strength">
+              <option value="Single Fold" selected>Single Fold</option>
+              <option value="One-and-a-half Fold">One-and-a-half Fold</option>
+              <option value="Double Fold">Double Fold</option>
+              <option value="Triple Fold">Triple Fold</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="a-formula">Formula</label>
+            <select data-role="formula" id="a-formula">
+              <option value="COOP" selected>Co-Op Formula</option>
+              <option value="BUDGET">Budget Formula</option>
+              <option value="FDA">FDA Formula</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div data-slot="result" class="result" style="margin-top:20px">
+        <p class="result-summary" data-slot="summary"></p>
+        <div class="result-hero">
+          <div class="bottle">
+            <div class="neck"></div>
+            <div class="body">
+              <div class="fill fill--alcohol" data-slot="alcohol-fill">
+                <span class="lbl">Alcohol</span>
+                <strong><span data-slot="alcohol"></span> <span data-slot="alcohol-unit"></span></strong>
+              </div>
+              <div class="fill fill--vanilla" data-slot="vanilla-fill">
+                <span class="lbl">Vanilla</span>
+                <strong><span data-slot="vanilla-oz"></span> oz</strong>
+              </div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="value"><span data-slot="vanilla-oz"></span> <small>oz</small></div>
+            <div class="caption">Vanilla beans</div>
+            <div class="value" style="margin-top:14px"><span data-slot="vanilla-g"></span> <small>g</small></div>
+            <div class="caption">Weight in grams</div>
+          </div>
+          <div class="stat">
+            <div class="value"><span data-slot="alcohol"></span> <small data-slot="alcohol-unit"></small></div>
+            <div class="caption">Alcohol</div>
+          </div>
+        </div>
+        <p class="result-sub" data-slot="breakdown"></p>
+      </div>
+    </section>
+
+    <section class="card panel" data-panel="alcohol">
+      <h2 class="prompt">How much alcohol do you have?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="a-alcohol-amount">Amount</label>
+          <input class="amount" data-role="amount" id="a-alcohol-amount" type="number" inputmode="decimal" min="0" step="any" value="750">
+        </div>
+        <div>
+          <label class="field-label" for="a-alcohol-unit">Unit</label>
+          <select class="unit" data-role="unit" id="a-alcohol-unit">
+            <option value="ml" selected>ml</option>
+            <option value="oz">fluid oz</option>
+            <option value="cups">cups</option>
+            <option value="pints">pints</option>
+            <option value="quarts">quarts</option>
+            <option value="liters">liters</option>
+            <option value="gallons">gallons</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="advanced">
+        <div class="advanced-head">
+          <h2>Recipe settings</h2>
+          <button type="button" class="help-btn" data-open-help>What do “fold” &amp; “formula” mean?</button>
+        </div>
+        <p class="advanced-hint">These two settings tune the recipe below.</p>
+        <div class="advanced-grid">
+          <div>
+            <label class="field-label" for="a-strength2">Strength</label>
+            <select data-role="strength" id="a-strength2">
+              <option value="Single Fold" selected>Single Fold</option>
+              <option value="One-and-a-half Fold">One-and-a-half Fold</option>
+              <option value="Double Fold">Double Fold</option>
+              <option value="Triple Fold">Triple Fold</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="a-formula2">Formula</label>
+            <select data-role="formula" id="a-formula2">
+              <option value="COOP" selected>Co-Op Formula</option>
+              <option value="BUDGET">Budget Formula</option>
+              <option value="FDA">FDA Formula</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div data-slot="result" class="result" style="margin-top:20px">
+        <p class="result-summary" data-slot="summary"></p>
+        <div class="callout">
+          <div class="big">Use at least <span data-slot="vanilla-oz"></span> oz of vanilla beans</div>
+          <div class="sub">That's about <span data-slot="vanilla-g"></span> grams.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel" data-panel="vanilla">
+      <h2 class="prompt">How much vanilla do you have?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="a-vanilla-amount">Amount</label>
+          <input class="amount" data-role="amount" id="a-vanilla-amount" type="number" inputmode="decimal" min="0" step="any" value="4">
+        </div>
+        <div>
+          <label class="field-label" for="a-vanilla-unit">Unit</label>
+          <select class="unit" data-role="unit" id="a-vanilla-unit">
+            <option value="g">g</option>
+            <option value="oz" selected>oz</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="advanced">
+        <div class="advanced-head">
+          <h2>Recipe settings</h2>
+          <button type="button" class="help-btn" data-open-help>What do “fold” &amp; “formula” mean?</button>
+        </div>
+        <p class="advanced-hint">These two settings tune the recipe below.</p>
+        <div class="advanced-grid">
+          <div>
+            <label class="field-label" for="a-strength3">Strength</label>
+            <select data-role="strength" id="a-strength3">
+              <option value="Single Fold" selected>Single Fold</option>
+              <option value="One-and-a-half Fold">One-and-a-half Fold</option>
+              <option value="Double Fold">Double Fold</option>
+              <option value="Triple Fold">Triple Fold</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="a-formula3">Formula</label>
+            <select data-role="formula" id="a-formula3">
+              <option value="COOP" selected>Co-Op Formula</option>
+              <option value="BUDGET">Budget Formula</option>
+              <option value="FDA">FDA Formula</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div data-slot="result" class="result" style="margin-top:20px">
+        <p class="result-summary" data-slot="summary"></p>
+        <p class="result-sub">Use up to this much 80–100 proof alcohol:</p>
+        <table class="unit-table" data-slot="table"></table>
+      </div>
+    </section>
+
+    <p class="foot">Made by Daniel Talsky to help people calculate vanilla extract easily. No warranty of any kind — provided for convenience.</p>
+  </div>
+</section>
+
+<!-- ===================== DESIGN B ===================== -->
+<section class="design design-b" id="design-b">
+  <span class="demo-label">Direction B — Clean minimal</span>
+
+  <div class="wrap">
+    <div class="topbar">
+      <span class="app">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3c3 2 6 4 7 8 0 4-3 7-7 7s-7-3-7-7c1-4 4-6 7-8z"/>
+          <path d="M12 3c-1 2-1.5 3-1.5 5 0 2 1 4 1.5 5.5" opacity=".55"/>
+        </svg>
+        Vanilla Calculator
+      </span>
+    </div>
+
+    <h1 class="title">Measure beans &amp; alcohol for homemade extract</h1>
+    <p class="tagline">Three ways to calculate — pick the one that matches what you know.</p>
+
+    <nav class="mode-tabs" role="tablist" aria-label="Calculation mode">
+      <button type="button" class="mode-btn is-active" data-mode="container">by Container Size</button>
+      <button type="button" class="mode-btn" data-mode="vanilla">by Vanilla Amount</button>
+      <button type="button" class="mode-btn" data-mode="alcohol">by Alcohol Amount</button>
+    </nav>
+
+    <section class="card panel is-active" data-panel="container">
+      <h2 class="prompt">How big is your container?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="b-container-amount">Capacity</label>
+          <input class="amount" data-role="amount" id="b-container-amount" type="number" inputmode="decimal" min="0" step="any" value="750">
+        </div>
+        <div>
+          <label class="field-label" for="b-container-unit">Unit</label>
+          <select class="unit" data-role="unit" id="b-container-unit">
+            <option value="ml" selected>ml</option>
+            <option value="oz">fluid oz</option>
+            <option value="cups">cups</option>
+            <option value="pints">pints</option>
+            <option value="quarts">quarts</option>
+            <option value="liters">liters</option>
+            <option value="gallons">gallons</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel" data-panel="vanilla">
+      <h2 class="prompt">How much vanilla do you have?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="b-vanilla-amount">Amount</label>
+          <input class="amount" data-role="amount" id="b-vanilla-amount" type="number" inputmode="decimal" min="0" step="any" value="4">
+        </div>
+        <div>
+          <label class="field-label" for="b-vanilla-unit">Unit</label>
+          <select class="unit" data-role="unit" id="b-vanilla-unit">
+            <option value="g">g</option>
+            <option value="oz" selected>oz</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card panel" data-panel="alcohol">
+      <h2 class="prompt">How much alcohol do you have?</h2>
+      <div class="field-row">
+        <div class="amount-wrap">
+          <label class="field-label" for="b-alcohol-amount">Amount</label>
+          <input class="amount" data-role="amount" id="b-alcohol-amount" type="number" inputmode="decimal" min="0" step="any" value="750">
+        </div>
+        <div>
+          <label class="field-label" for="b-alcohol-unit">Unit</label>
+          <select class="unit" data-role="unit" id="b-alcohol-unit">
+            <option value="ml" selected>ml</option>
+            <option value="oz">fluid oz</option>
+            <option value="cups">cups</option>
+            <option value="pints">pints</option>
+            <option value="quarts">quarts</option>
+            <option value="liters">liters</option>
+            <option value="gallons">gallons</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <div class="card advanced">
+      <div class="advanced-head">
+        <h2 class="advanced-title">Strength &amp; formula</h2>
+        <button type="button" class="advanced-help" data-open-help>What are strength and formula?</button>
+      </div>
+      <p class="advanced-hint">These two settings tune the recipe below.</p>
+      <div class="advanced-body">
+        <div>
+          <label class="field-label" for="b-strength">Strength</label>
+          <select data-role="strength" id="b-strength">
+            <option value="Single Fold" selected>Single Fold</option>
+            <option value="One-and-a-half Fold">One-and-a-half Fold</option>
+            <option value="Double Fold">Double Fold</option>
+            <option value="Triple Fold">Triple Fold</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="b-formula">Formula</label>
+          <select data-role="formula" id="b-formula">
+            <option value="COOP" selected>Co-Op Formula</option>
+            <option value="BUDGET">Budget Formula</option>
+            <option value="FDA">FDA Formula</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Container result -->
+    <div class="panel is-active" data-panel="container">
+      <div data-slot="result">
+        <p class="result-summary" data-slot="summary"></p>
+        <div class="vessel-wrap">
+          <div class="vessel">
+            <div class="vessel__body">
+              <div class="vessel__fill vessel__alcohol" data-slot="alcohol-fill">
+                <span class="vessel__label">Alcohol</span>
+                <strong><span data-slot="alcohol"></span> <span data-slot="alcohol-unit"></span></strong>
+              </div>
+              <div class="vessel__fill vessel__vanilla" data-slot="vanilla-fill">
+                <span class="vessel__label">Vanilla</span>
+                <strong><span data-slot="vanilla-oz"></span> oz</strong>
+              </div>
+              <div class="vessel__gloss"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="value"><span data-slot="vanilla-oz"></span> <small>oz</small></div>
+            <div class="caption">Vanilla beans</div>
+          </div>
+          <div class="stat-card">
+            <div class="value"><span data-slot="vanilla-g"></span> <small>g</small></div>
+            <div class="caption">Vanilla (grams)</div>
+          </div>
+          <div class="stat-card">
+            <div class="value"><span data-slot="alcohol"></span> <small data-slot="alcohol-unit"></small></div>
+            <div class="caption">Alcohol</div>
+          </div>
+        </div>
+        <p class="result-sub" data-slot="breakdown"></p>
+      </div>
+    </div>
+
+    <!-- Vanilla result -->
+    <div class="panel" data-panel="vanilla">
+      <div data-slot="result">
+        <p class="result-summary" data-slot="summary"></p>
+        <p class="result-sub">Use up to this much 80–100 proof alcohol:</p>
+        <ul class="unit-list" data-slot="table"></ul>
+      </div>
+    </div>
+
+    <!-- Alcohol result -->
+    <div class="panel" data-panel="alcohol">
+      <div data-slot="result">
+        <p class="result-summary" data-slot="summary"></p>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="value"><span data-slot="vanilla-oz"></span> <small>oz</small></div>
+            <div class="caption">Vanilla beans</div>
+          </div>
+          <div class="stat-card">
+            <div class="value"><span data-slot="vanilla-g"></span> <small>g</small></div>
+            <div class="caption">Vanilla (grams)</div>
+          </div>
+        </div>
+        <p class="result-sub">Use at least <strong><span data-slot="vanilla-oz"></span> oz</strong> of vanilla beans.</p>
+      </div>
+    </div>
+
+    <p class="foot">Made by Daniel Talsky to help people calculate vanilla extract easily. No warranty of any kind — provided for convenience.</p>
+  </div>
+</section>
+
+<!-- Shared help dialog -->
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <div class="help-card" style="position:relative">
+    <button type="button" class="close" id="helpClose" aria-label="Close">✕</button>
+    <h2 id="helpTitle">What are the “folds” and “formulas”?</h2>
+    <p>Vanilla extract is made by soaking vanilla beans in 70–100 proof alcohol for 4–12 months. The formulas are guidelines for how much to use.</p>
+
+    <h3>Formulas</h3>
+    <p><strong>The FDA Formula</strong> is a legal formula for commercial producers using Grade B beans: at least 1 gram of beans per 10ml of alcohol.</p>
+    <p><strong>The Co-Op Formula</strong> is based on the FDA rule but ~20% stronger — 1 oz of beans to 1 cup of alcohol — accounting for heavier Grade A beans.</p>
+    <p><strong>The Budget Formula</strong> is 5% more beans than FDA, for getting the most extract from Grade A beans.</p>
+
+    <h3>Folds (strength)</h3>
+    <p><strong>Single Fold</strong> is regular-strength vanilla — what recipes mean by “1 tsp of vanilla extract.”</p>
+    <p><strong>Double and Triple Fold</strong> are double or triple strength, used to get more flavor with less liquid.</p>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ---------- Constants (ported from index.php) ---------- */
+const OZ_PER_G = 0.035274;
+const G_PER_OZ = 28.3495;
+const ML_PER = { ml: 1, oz: 29.574, cups: 236.588, pints: 473.176, quarts: 946.353, liters: 1000, gallons: 3785.41 };
+const PER_ML = { ml: 1, oz: 0.033814, cups: 0.00422675, pints: 0.00211338, quarts: 0.00105669, liters: 0.001, gallons: 0.000264172 };
+const STRENGTH_FACTORS = { "Single Fold": 1, "One-and-a-half Fold": 1.5, "Double Fold": 2, "Triple Fold": 3 };
+const FORMULA_G_PER_10ML = { FDA: 1, BUDGET: 1.05, COOP: 1.198 };
+const APPROX_ML_OF_VANILLA_DISPLACEMENT_PER_G = 2;
+
+const FORMULA_LABEL = { COOP: "Co-Op Formula", BUDGET: "Budget Formula", FDA: "FDA Formula" };
+
+/* ---------- Calculation functions (ported from index.php) ---------- */
+// Mimics PHP's round(x, precision) with half-up using decimal-string math.
+function phpRound(value, precision) {
+  if (precision === 0) return Math.round(value);
+  return Number(Math.round(Number(value + "e" + precision)) + "e-" + precision);
+}
+
+function calculateByContainer(containerAmount, containerUnit, gPer10ml, strengthFactor) {
+  const containerAmountMl = containerAmount * ML_PER[containerUnit];
+  const gOfVanillaPer10ml = gPer10ml * strengthFactor;
+  const vanillaDisplacementPer10ml = gOfVanillaPer10ml * APPROX_ML_OF_VANILLA_DISPLACEMENT_PER_G;
+  const vanillaDisplacementUnit = 10 + vanillaDisplacementPer10ml;
+  const numberOfUnits = phpRound(containerAmountMl / vanillaDisplacementUnit, 2);
+  const alcoholMl = numberOfUnits * 10;
+  const alcoholInContainerUnit = phpRound(alcoholMl * PER_ML[containerUnit], 2);
+  const vanillaMl = phpRound(numberOfUnits * vanillaDisplacementPer10ml, 2);
+  const vanillaG = phpRound(numberOfUnits * gOfVanillaPer10ml, 2);
+  const vanillaOz = phpRound(vanillaG * OZ_PER_G, 2);
+  return { containerAmountMl, alcoholMl, alcoholInContainerUnit, vanillaMl, vanillaG, vanillaOz };
+}
+
+function calculateByAlcohol(alcoholAmount, alcoholUnit, gPer10ml, strengthFactor) {
+  const alcoholAmountMl = alcoholAmount * ML_PER[alcoholUnit];
+  const gOfVanilla = (alcoholAmountMl / 10) * gPer10ml * strengthFactor;
+  const vanillaOz = phpRound(OZ_PER_G * gOfVanilla, 1);
+  const vanillaG = phpRound(vanillaOz * G_PER_OZ, 0);
+  return { vanillaOz, vanillaG };
+}
+
+function calculateByVanilla(vanillaAmount, vanillaUnit, gPer10ml, strengthFactor) {
+  const gOfVanilla = (vanillaUnit === "oz") ? vanillaAmount * G_PER_OZ : vanillaAmount;
+  const alcoholMl = gOfVanilla / (gPer10ml * strengthFactor) * 10;
+  const alcoholByUnit = {};
+  for (const unit in PER_ML) {
+    alcoholByUnit[unit] = phpRound(alcoholMl * PER_ML[unit], 2);
+  }
+  return alcoholByUnit;
+}
+
+/* ---------- Helpers ---------- */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+function findInputPanel(root, mode) {
+  const panels = $$('.panel[data-panel="' + mode + '"]', root);
+  return panels.find(p => p.querySelector('[data-role="amount"]')) || panels[0] || root;
+}
+function readNumber(panel) {
+  const el = panel.querySelector('[data-role="amount"]');
+  const v = parseFloat(el.value);
+  return isNaN(v) ? 0 : v;
+}
+function readUnit(panel) {
+  const el = panel.querySelector('[data-role="unit"]');
+  return el ? el.value : "ml";
+}
+function readSetting(root, role, panel) {
+  const inPanel = panel.querySelector('[data-role="' + role + '"]');
+  const el = inPanel || root.querySelector('[data-role="' + role + '"]');
+  return el ? el.value : null;
+}
+
+/* ---------- Generic renderer for both designs ---------- */
+function renderDesign(root) {
+  const mode = root.dataset.mode || "container";
+  const panel = findInputPanel(root, mode);
+  const strength = readSetting(root, "strength", panel);
+  const formula = readSetting(root, "formula", panel);
+  const gPer10ml = FORMULA_G_PER_10ML[formula];
+  const strengthFactor = STRENGTH_FACTORS[strength];
+  const summaryText = FORMULA_LABEL[formula] + " · " + strength + " (" + strengthFactor + "×)";
+
+  // Panel-scoped result slots
+  const set = (name, text) => {
+    $$('[data-slot="' + name + '"]', root).forEach(el => { if (el) el.textContent = text; });
+  };
+
+  if (mode === "container") {
+    const amount = readNumber(panel);
+    const unit = readUnit(panel);
+    const r = calculateByContainer(amount, unit, gPer10ml, strengthFactor);
+
+    set("summary", summaryText);
+    set("vanilla-oz", String(r.vanillaOz));
+    set("vanilla-g", String(r.vanillaG));
+    set("alcohol", String(r.alcoholInContainerUnit));
+    set("alcohol-unit", unit);
+    set("breakdown",
+      "To fill a " + r.containerAmountMl + " ml container, use at least " +
+      r.vanillaG + " g / " + r.vanillaOz + " oz of vanilla beans (taking up ~" + r.vanillaMl +
+      " ml), then fill the rest with about " + r.alcoholMl + " ml of alcohol.");
+
+    // Fill visuals (vertical vessels/bottles)
+    const total = r.containerAmountMl || 1;
+    const vanPct = Math.max(0, Math.min(100, r.vanillaMl / total * 100));
+    const alcPct = Math.max(0, Math.min(100 - vanPct, r.alcoholMl / total * 100));
+    $$('[data-slot="vanilla-fill"]', root).forEach(el => { el.style.height = vanPct + "%"; });
+    $$('[data-slot="alcohol-fill"]', root).forEach(el => { el.style.height = alcPct + "%"; });
+  } else if (mode === "alcohol") {
+    const amount = readNumber(panel);
+    const unit = readUnit(panel);
+    const r = calculateByAlcohol(amount, unit, gPer10ml, strengthFactor);
+    set("summary", summaryText);
+    set("vanilla-oz", String(r.vanillaOz));
+    set("vanilla-g", String(r.vanillaG));
+  } else if (mode === "vanilla") {
+    const amount = readNumber(panel);
+    const unit = readUnit(panel);
+    const byUnit = calculateByVanilla(amount, unit, gPer10ml, strengthFactor);
+    set("summary", summaryText);
+
+    // Render table/list for alcohol amounts
+    $$('[data-slot="table"]', root).forEach(el => {
+      const isTable = el.tagName === "TABLE";
+      const rows = Object.keys(byUnit)
+        .filter(u => byUnit[u] > 0.1)
+        .map(u => ({ unit: u, amt: byUnit[u] }));
+      el.innerHTML = "";
+      rows.forEach(r => {
+        if (isTable) {
+          const tr = document.createElement("tr");
+          const td1 = document.createElement("td");
+          td1.textContent = r.amt;
+          const td2 = document.createElement("td");
+          td2.textContent = r.unit;
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          el.appendChild(tr);
+        } else {
+          const li = document.createElement("li");
+          li.innerHTML = '<span class="amt">' + r.amt + '</span><span class="u">' + r.unit + '</span>';
+          el.appendChild(li);
+        }
+      });
+    });
+  }
+}
+
+/* ---------- Wire up a design ---------- */
+function activateMode(root, mode) {
+  root.dataset.mode = mode;
+  $$(".mode-btn", root).forEach(b => b.classList.toggle("is-active", b.dataset.mode === mode));
+  $$(".panel", root).forEach(p => p.classList.toggle("is-active", p.dataset.panel === mode));
+}
+
+function wireDesign(root) {
+  activateMode(root, "container");
+
+  // Mode buttons
+  $$(".mode-btn", root).forEach(btn => {
+    btn.addEventListener("click", () => {
+      activateMode(root, btn.dataset.mode);
+      renderDesign(root);
+    });
+  });
+
+  // Live updates
+  $$('input[data-role="amount"], select', root).forEach(el => {
+    const evt = el.tagName === "SELECT" ? "change" : "input";
+    el.addEventListener(evt, () => renderDesign(root));
+  });
+
+  // Help buttons
+  $$("[data-open-help]", root).forEach(btn => {
+    btn.addEventListener("click", () => openHelp());
+  });
+
+  renderDesign(root);
+}
+
+/* ---------- Help modal ---------- */
+const dialog = document.getElementById("helpDialog");
+const helpClose = document.getElementById("helpClose");
+function openHelp() {
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+}
+helpClose.addEventListener("click", () => dialog.close());
+dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+
+/* ---------- Exploration switcher ---------- */
+$$(".explorer button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    $$(".explorer button").forEach(b => b.classList.toggle("is-active", b === btn));
+    $$(".design").forEach(d => d.classList.toggle("is-active", d.id === btn.dataset.target));
+  });
+});
+
+/* ---------- Init ---------- */
+wireDesign(document.getElementById("design-a"));
+wireDesign(document.getElementById("design-b"));
+</script>
+</body>
+</html>
