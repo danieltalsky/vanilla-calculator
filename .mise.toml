@@ -1,2 +1,5 @@
 [tools]
 php = "8.5"
+
+[tasks.test]
+run = "php -l index.php && php tests/smoke.php && php tests/unit.php"

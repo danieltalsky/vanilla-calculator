@@ -27,8 +27,7 @@ is no framework, no package manager, and no build step.
 ## Running and testing
 
 - Run: `mise x -- php -S localhost:8000`, then open http://localhost:8000.
-- Smoke tests: `mise x -- php tests/smoke.php` (asserts key rendered outputs).
-- Unit tests: `mise x -- php tests/unit.php` (exercises the calculation functions).
+- Test: `mise run test` (runs lint + smoke + unit; defined in `.mise.toml`).
 
 ## Key details
 

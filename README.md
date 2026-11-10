@@ -48,14 +48,20 @@ php -S localhost:8000
 
 ## Testing
 
-Two dependency-free test scripts, run from the project root:
+Run the full suite (lint + smoke + unit) with:
+
+```sh
+mise run test
+```
+
+Or run the scripts individually:
 
 ```sh
 mise x -- php tests/smoke.php   # integration: asserts key rendered outputs
 mise x -- php tests/unit.php    # unit: exercises the calculation functions
 ```
 
-Both exit non-zero on failure.
+All exit non-zero on failure.
 
 ## How it works
 

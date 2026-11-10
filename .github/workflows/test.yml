@@ -19,11 +19,5 @@ jobs:
           install: true
           cache: true
 
-      - name: Lint
-        run: mise x -- php -l index.php
-
-      - name: Smoke tests
-        run: mise x -- php tests/smoke.php
-
-      - name: Unit tests
-        run: mise x -- php tests/unit.php
+      - name: Run tests
+        run: mise run test
