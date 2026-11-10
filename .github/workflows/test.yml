@@ -13,6 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # mise's Linux PHP backend (vfox-php) compiles PHP from source and needs
+      # these system build libraries. See version-fox/vfox-php README.
+      - name: Install PHP build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libxslt-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+
       - name: Install PHP via mise
         uses: jdx/mise-action@v5
         with:
