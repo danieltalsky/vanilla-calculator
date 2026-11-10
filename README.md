@@ -48,12 +48,14 @@ php -S localhost:8000
 
 ## Testing
 
-A dependency-free smoke test asserts the calculator's outputs for a handful
-of known inputs (including the case where no formula is specified):
+Two dependency-free test scripts, run from the project root:
 
 ```sh
-mise x -- php tests/smoke.php
+mise x -- php tests/smoke.php   # integration: asserts key rendered outputs
+mise x -- php tests/unit.php    # unit: exercises the calculation functions
 ```
+
+Both exit non-zero on failure.
 
 ## How it works
 

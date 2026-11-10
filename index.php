@@ -1,9 +1,9 @@
 <?php
 
 // Constants
-$oz_per_g = 0.035274;
-$g_per_oz = 28.3495;
-$ml_per = [
+const OZ_PER_G = 0.035274;
+const G_PER_OZ = 28.3495;
+const ML_PER = [
 	"ml" => 1,
 	"oz" => 29.574,
 	"cups" => 236.588,
@@ -12,7 +12,7 @@ $ml_per = [
 	"liters" => 1000,
 	"gallons" => 3785.41
 ];
-$per_ml = [
+const PER_ML = [
 	"ml" => 1,
 	"oz" => 0.033814,
 	"cups" => 0.00422675,
@@ -21,19 +21,19 @@ $per_ml = [
 	"liters" => 0.001,
 	"gallons" => 0.000264172
 ];
-$strengthFactors = [
+const STRENGTH_FACTORS = [
 	"Single Fold" => 1,
 	"One-and-a-half Fold" => 1.5,
 	"Double Fold" => 2,
 	"Triple Fold" => 3
 ];
-$formula_g_per_10ml = [
+const FORMULA_G_PER_10ML = [
 	"FDA" => 1,
 	"BUDGET" => 1.05,
 	"COOP" => 1.198
 ];
 // ml per g displacement rough estimate is from observation
-$approx_ml_ofVanillaDisplacementPer_g = 2;
+const APPROX_ML_OF_VANILLA_DISPLACEMENT_PER_G = 2;
 
 // Google Analytics property id (change here for a fork/deployment)
 $googleAnalyticsId = "G-LFQ9EQV3K2";
@@ -41,10 +41,10 @@ $googleAnalyticsId = "G-LFQ9EQV3K2";
 // Common Initialized Defaults (Advanced Options)
 $defaultStrengthFactorName = "Single Fold";
 $strengthFactorName = $defaultStrengthFactorName;
-$strengthFactor = $strengthFactors[$defaultStrengthFactorName];
+$strengthFactor = STRENGTH_FACTORS[$defaultStrengthFactorName];
 $defaultFormula = "COOP";
 $formula = $defaultFormula;
-$g_per_10ml = $formula_g_per_10ml[$formula];
+$g_per_10ml = FORMULA_G_PER_10ML[$formula];
 
 // Initialized Defaults for "by Container"
 $defaultContainerAmount = "750";
@@ -86,8 +86,8 @@ if (isset($_GET["byVanillaAmount"])) {
 // Set Formula
 if (isset($_GET['formula'])) {
 	// FDA (1g to 10ml) or Co-op (1.198) Formula
-	if (in_array($_GET['formula'], array_keys($formula_g_per_10ml))) {
-		$g_per_10ml = $formula_g_per_10ml[$_GET['formula']];
+	if (in_array($_GET['formula'], array_keys(FORMULA_G_PER_10ML))) {
+		$g_per_10ml = FORMULA_G_PER_10ML[$_GET['formula']];
 		$formula = $_GET['formula'];
 	}
 }
@@ -95,8 +95,8 @@ if (isset($_GET['formula'])) {
 // Set Strength Factor
 if (isset($_GET['strengthFactorName'])) {
 	// single fold, double fold, triple fold
-	if (in_array($_GET['strengthFactorName'], array_keys($strengthFactors))) {
-		$strengthFactor = $strengthFactors[$_GET['strengthFactorName']];
+	if (in_array($_GET['strengthFactorName'], array_keys(STRENGTH_FACTORS))) {
+		$strengthFactor = STRENGTH_FACTORS[$_GET['strengthFactorName']];
 		$strengthFactorName = $_GET['strengthFactorName'];
 	}
 }
@@ -107,36 +107,17 @@ if (isset($_GET['containerAmount'])) {
 	// Get and sanitize user input
 	$containerAmount = floatval($_GET['containerAmount']);
 	$defaultContainerAmount = $containerAmount;
-	if (isset($_GET['containerUnit']) && in_array($_GET['containerUnit'], array_keys($ml_per))) {
+	if (isset($_GET['containerUnit']) && in_array($_GET['containerUnit'], array_keys(ML_PER))) {
 		$containerUnit = $_GET['containerUnit'];
 	}
 
-	// Convert container amount into ml
-	$containerAmount_ml = $containerAmount * $ml_per[$containerUnit];
-
-	// Calculate "vanilla displacement unit"
-	// This is 10ml of alcohol + the approx ml displacement for
-	// however many grams of vanilla are necessary for this strength
-	// example: singlefold FDA extract is 1 g to 10ml alcohol
-	// 1g = 2ml vanilla displacement
-	// 10ml alcohol + 2ml
-	$singlefold_g_ofVanillaPer_10ml = $g_per_10ml;
-	$g_ofVanillaPer_10ml = $singlefold_g_ofVanillaPer_10ml * $strengthFactor;
-
-	$vanillaDisplacementPer_10ml = $g_ofVanillaPer_10ml * $approx_ml_ofVanillaDisplacementPer_g;
-	$vanillaDisplacementUnit = 10 + $vanillaDisplacementPer_10ml;
-
-	// Divide each "vanilla displacement unit" into total ml to get the correct ratio
-	$numberOfVanillaDisplacementUnits = round($containerAmount_ml / $vanillaDisplacementUnit, 2);
-
-	// get alcohol ml
-	$alcohol_ml = $numberOfVanillaDisplacementUnits * 10; // ml
-	// convert alcohol amount back into original unit
-	$alcoholInContainerUnit = round($alcohol_ml * $per_ml[$containerUnit], 2);
-
-	$vanilla_ml = round($numberOfVanillaDisplacementUnits * $vanillaDisplacementPer_10ml, 2);
-	$vanilla_g = round($numberOfVanillaDisplacementUnits * $g_ofVanillaPer_10ml, 2);
-	$vanilla_oz = round($vanilla_g * $oz_per_g, 2);
+	$result = calculateByContainer($containerAmount, $containerUnit, $g_per_10ml, $strengthFactor);
+	$containerAmount_ml = $result['containerAmountMl'];
+	$alcohol_ml = $result['alcoholMl'];
+	$alcoholInContainerUnit = $result['alcoholInContainerUnit'];
+	$vanilla_ml = $result['vanillaMl'];
+	$vanilla_g = $result['vanillaG'];
+	$vanilla_oz = $result['vanillaOz'];
 }
 
 // Calculate "by Alcohol Amount"
@@ -145,21 +126,14 @@ if (isset($_GET['alcoholAmount'])) {
 	// Get and sanitize user input
 	$alcoholAmount = floatval($_GET['alcoholAmount']);
 	$defaultAlcoholAmount = $alcoholAmount;
-	if (isset($_GET['alcoholUnit']) && in_array($_GET['alcoholUnit'], array_keys($ml_per))) {
+	if (isset($_GET['alcoholUnit']) && in_array($_GET['alcoholUnit'], array_keys(ML_PER))) {
 		$alcoholUnit = $_GET['alcoholUnit'];
 		$defaultAlcoholUnit = $alcoholUnit;
 	}
-	// Convert alcohol amount into ml
-	$alcoholAmount_ml = $alcoholAmount * $ml_per[$alcoholUnit];
-	// Get vanilla
-	$singlefold_g_ofVanillaPer_10ml = $g_per_10ml;
-	$g_ofVanillaPer_10ml = $singlefold_g_ofVanillaPer_10ml * $strengthFactor;
-	$g_ofVanilla = ($alcoholAmount_ml / 10) * $g_ofVanillaPer_10ml;
 
-	// Calculate oz (rounded) and derive grams from the rounded oz so the
-	// two displayed values stay consistent with each other.
-	$roundedVanilla_oz = round($oz_per_g * $g_ofVanilla, 1);
-	$roundedVanilla_g = round($roundedVanilla_oz * $g_per_oz);
+	$result = calculateByAlcohol($alcoholAmount, $alcoholUnit, $g_per_10ml, $strengthFactor);
+	$roundedVanilla_oz = $result['vanillaOz'];
+	$roundedVanilla_g = $result['vanillaG'];
 }
 
 // Calculate "by Vanilla Amount" weight
@@ -172,24 +146,79 @@ if (isset($_GET['vanillaAmount'])) {
 		$vanillaUnit = $_GET['vanillaUnit'];
 		$defaultVanillaUnit = $vanillaUnit;
 	}
-	// convert to grams	if oz
-	$g_ofVanilla = $vanillaAmount;
-	if ($vanillaUnit == "oz") {
-		$g_ofVanilla = $vanillaAmount * $g_per_oz;
+
+	$alcohol_forVanilla = calculateByVanilla($vanillaAmount, $vanillaUnit, $g_per_10ml, $strengthFactor)['alcoholByUnit'];
+}
+
+/**
+ * Calculate the vanilla/alcohol amounts needed to fill a container.
+ * Returns amounts in ml/g/oz, keyed by name.
+ */
+function calculateByContainer($containerAmount, $containerUnit, $gPer10ml, $strengthFactor) {
+	// Convert container amount into ml.
+	$containerAmountMl = $containerAmount * ML_PER[$containerUnit];
+
+	// "vanilla displacement unit": 10ml of alcohol plus the approx ml of
+	// space displaced by the vanilla needed for that 10ml. Example: single
+	// fold FDA is 1 g vanilla per 10ml alcohol; 1 g displaces ~2ml, so one
+	// unit is 10ml alcohol + 2ml = 12ml.
+	$gOfVanillaPer10ml = $gPer10ml * $strengthFactor;
+	$vanillaDisplacementPer10ml = $gOfVanillaPer10ml * APPROX_ML_OF_VANILLA_DISPLACEMENT_PER_G;
+	$vanillaDisplacementUnit = 10 + $vanillaDisplacementPer10ml;
+
+	// Divide the container into units to get the correct ratio.
+	$numberOfUnits = round($containerAmountMl / $vanillaDisplacementUnit, 2);
+
+	$alcoholMl = $numberOfUnits * 10;
+	$alcoholInContainerUnit = round($alcoholMl * PER_ML[$containerUnit], 2);
+	$vanillaMl = round($numberOfUnits * $vanillaDisplacementPer10ml, 2);
+	$vanillaG = round($numberOfUnits * $gOfVanillaPer10ml, 2);
+	$vanillaOz = round($vanillaG * OZ_PER_G, 2);
+
+	return [
+		'containerAmountMl' => $containerAmountMl,
+		'alcoholMl' => $alcoholMl,
+		'alcoholInContainerUnit' => $alcoholInContainerUnit,
+		'vanillaMl' => $vanillaMl,
+		'vanillaG' => $vanillaG,
+		'vanillaOz' => $vanillaOz,
+	];
+}
+
+/**
+ * Calculate the vanilla needed for a given amount of alcohol.
+ * Returns the rounded ounces and grams of vanilla beans.
+ */
+function calculateByAlcohol($alcoholAmount, $alcoholUnit, $gPer10ml, $strengthFactor) {
+	$alcoholAmountMl = $alcoholAmount * ML_PER[$alcoholUnit];
+	$gOfVanilla = ($alcoholAmountMl / 10) * $gPer10ml * $strengthFactor;
+
+	// Round oz first, then derive grams from the rounded oz so the two
+	// displayed values stay consistent with each other.
+	$vanillaOz = round(OZ_PER_G * $gOfVanilla, 1);
+	$vanillaG = round($vanillaOz * G_PER_OZ);
+
+	return [
+		'vanillaOz' => $vanillaOz,
+		'vanillaG' => $vanillaG,
+	];
+}
+
+/**
+ * Calculate the alcohol needed for a given amount of vanilla.
+ * Returns the alcohol amount expressed in every supported unit.
+ */
+function calculateByVanilla($vanillaAmount, $vanillaUnit, $gPer10ml, $strengthFactor) {
+	$gOfVanilla = ($vanillaUnit === 'oz') ? $vanillaAmount * G_PER_OZ : $vanillaAmount;
+
+	$alcoholMl = $gOfVanilla / ($gPer10ml * $strengthFactor) * 10;
+
+	$alcoholByUnit = [];
+	foreach (PER_ML as $unit => $conversion) {
+		$alcoholByUnit[$unit] = round($alcoholMl * $conversion, 2);
 	}
 
-	// calculate g per 10ml for formula and strength
-	$singlefold_g_ofVanillaPer_10ml = $g_per_10ml;
-	$g_ofVanillaPer_10ml = $singlefold_g_ofVanillaPer_10ml * $strengthFactor;
-
-	// calculate the correct ml of alcohol
-	$alcohol_ml_forVanilla = $g_ofVanilla / $g_ofVanillaPer_10ml * 10;
-
-	// convert to each unit
-	$alcohol_forVanilla = [];
-	foreach ($per_ml as $unit => $conversion) {
-		$alcohol_forVanilla[$unit] = round($alcohol_ml_forVanilla * $conversion, 2);
-	}
+	return ['alcoholByUnit' => $alcoholByUnit];
 }
 
 function selected_if($current, $selected) {

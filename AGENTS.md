@@ -28,12 +28,17 @@ is no framework, no package manager, and no build step.
 
 - Run: `mise x -- php -S localhost:8000`, then open http://localhost:8000.
 - Smoke tests: `mise x -- php tests/smoke.php` (asserts key rendered outputs).
+- Unit tests: `mise x -- php tests/unit.php` (exercises the calculation functions).
 
 ## Key details
 
 - Calculator mode is selected by query parameter:
   `?byContainerSize`, `?byAlcoholAmount`, or `?byVanillaAmount`.
-- Advanced options map to the `$strengthFactors` and `$formula_g_per_10ml`
-  arrays at the top of `index.php`.
+- The three calculations live in pure functions near the top of `index.php`:
+  `calculateByContainer`, `calculateByAlcohol`, and `calculateByVanilla`.
+  They take explicit inputs and return arrays (no globals or side effects).
+- Conversion data lives in the constants `ML_PER`, `PER_ML`, `OZ_PER_G`,
+  `G_PER_OZ`, `STRENGTH_FACTORS`, `FORMULA_G_PER_10ML`, and
+  `APPROX_ML_OF_VANILLA_DISPLACEMENT_PER_G`.
 - User input is read from `$_GET` and sanitized with `floatval()` and
   `in_array()` whitelisting.
