@@ -1,11 +1,14 @@
 # Vanilla Extract Calculator
 
+[![Test](https://github.com/danieltalsky/vanilla-calculator/actions/workflows/test.yml/badge.svg)](https://github.com/danieltalsky/vanilla-calculator/actions/workflows/test.yml)
+
 A single-page web application that helps people calculate the correct ratio of
 vanilla beans and alcohol per container when making vanilla extract.
 
 Used by hundreds of thousands of people and still in heavy use.
 
 **Live site:** <https://danieltalsky.com/vanilla>
+**Repository:** <https://github.com/danieltalsky/vanilla-calculator>
 
 ## Current state
 
