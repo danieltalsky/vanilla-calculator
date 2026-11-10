@@ -10,7 +10,7 @@ $ml_per = [
 	"pints" => 473.176,
 	"quarts" => 946.353,
 	"liters" => 1000,
-	"gallons" => 3785
+	"gallons" => 3785.41
 ];
 $per_ml = [
 	"ml" => 1,
@@ -115,7 +115,7 @@ if (isset($_GET['containerAmount'])) {
 	$containerAmount_ml = $containerAmount * $ml_per[$containerUnit];
 
 	// Calculate "vanilla displacement unit"
-	// This is 10mg of alcohol + the approx ml displacement for
+	// This is 10ml of alcohol + the approx ml displacement for
 	// however many grams of vanilla are necessary for this strength
 	// example: singlefold FDA extract is 1 g to 10ml alcohol
 	// 1g = 2ml vanilla displacement
@@ -123,8 +123,8 @@ if (isset($_GET['containerAmount'])) {
 	$singlefold_g_ofVanillaPer_10ml = $g_per_10ml;
 	$g_ofVanillaPer_10ml = $singlefold_g_ofVanillaPer_10ml * $strengthFactor;
 
-	$vanillaDisplacementPer_10mg = $g_ofVanillaPer_10ml * $approx_ml_ofVanillaDisplacementPer_g;
-	$vanillaDisplacementUnit = 10 + $vanillaDisplacementPer_10mg;
+	$vanillaDisplacementPer_10ml = $g_ofVanillaPer_10ml * $approx_ml_ofVanillaDisplacementPer_g;
+	$vanillaDisplacementUnit = 10 + $vanillaDisplacementPer_10ml;
 
 	// Divide each "vanilla displacement unit" into total ml to get the correct ratio
 	$numberOfVanillaDisplacementUnits = round($containerAmount_ml / $vanillaDisplacementUnit, 2);
@@ -134,7 +134,7 @@ if (isset($_GET['containerAmount'])) {
 	// convert alcohol amount back into original unit
 	$alcoholInContainerUnit = round($alcohol_ml * $per_ml[$containerUnit], 2);
 
-	$vanilla_ml = round($numberOfVanillaDisplacementUnits * $vanillaDisplacementPer_10mg, 2);
+	$vanilla_ml = round($numberOfVanillaDisplacementUnits * $vanillaDisplacementPer_10ml, 2);
 	$vanilla_g = round($numberOfVanillaDisplacementUnits * $g_ofVanillaPer_10ml, 2);
 	$vanilla_oz = round($vanilla_g * $oz_per_g, 2);
 }
@@ -156,9 +156,10 @@ if (isset($_GET['alcoholAmount'])) {
 	$g_ofVanillaPer_10ml = $singlefold_g_ofVanillaPer_10ml * $strengthFactor;
 	$g_ofVanilla = ($alcoholAmount_ml / 10) * $g_ofVanillaPer_10ml;
 
-	// Calculate oz and round
+	// Calculate oz (rounded) and derive grams from the rounded oz so the
+	// two displayed values stay consistent with each other.
 	$roundedVanilla_oz = round($oz_per_g * $g_ofVanilla, 1);
-	$roundedVanilla_g = round($g_ofVanilla);
+	$roundedVanilla_g = round($roundedVanilla_oz * $g_per_oz);
 }
 
 // Calculate "by Vanilla Amount" weight
